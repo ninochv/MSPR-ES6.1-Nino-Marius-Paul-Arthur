@@ -527,18 +527,3 @@ eol_database:
 
 ---
 
-## Licence
-
-MIT License - Nord Transit Logistics © 2024
-
----
-
-## Support
-
-Pour toute question ou problème :
-- Email: it@nordtransit.local
-- Issues: Créez un ticket sur le dépôt Git interne
-
----
-
-**Développé pour Nord Transit Logistics - MSPR 2024**
