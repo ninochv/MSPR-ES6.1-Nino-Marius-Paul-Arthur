@@ -108,4 +108,67 @@ class CommandHandler:
         else:
             print("Sous-commande backup requise. Utilisez --help.")
             return ExitCode.UNKNOWN
-    
+        
+    def _handle_audit(self, args: Namespace) -> int:
+        """Gère les commandes du module audit."""
+        sub_command = args.audit_command
+        
+        if sub_command == 'scan':
+            self.output.set_module("Scan Réseau")
+            scanner = NetworkScanner(config=self.config, output=self.output)
+            
+            if getattr(args, 'host', None):
+                scanner.scan_host_detailed(args.host)
+            else:
+                network_range = getattr(args, 'range', None)
+                scanner.scan_network(network_range)
+            
+            return self.output.print_summary()
+        
+        elif sub_command == 'report':
+            self.output.set_module("Rapport d'Obsolescence")
+            report = ObsolescenceReport(config=self.config, output=self.output)
+            
+            network_range = getattr(args, 'range', None)
+            save = not getattr(args, 'no_save', False)
+            
+            report.generate_full_report(network_range=network_range, save_report=save)
+            
+            return self.output.print_summary()
+        
+        elif sub_command == 'check':
+            self.output.set_module("Vérification EOL")
+            report = ObsolescenceReport(config=self.config, output=self.output)
+            report.check_single_os(args.os_name)
+            
+            return self.output.print_summary()
+        
+        elif sub_command == 'list-eol':
+            self.output.set_module("Base EOL")
+            eol_db = EOLDatabase(config=self.config)
+            
+            print("\n" + "=" * 60)
+            print("BASE DE DONNÉES END-OF-LIFE (EOL)")
+            print("=" * 60)
+            
+            for os_name in sorted(eol_db.get_all_os()):
+                status = eol_db.check_eol_status(os_name)
+                criticality = status.get('criticality', 'unknown')
+                
+                if criticality == 'critical':
+                    symbol = "[CRITIQUE]"
+                elif criticality == 'warning':
+                    symbol = "[ATTENTION]"
+                elif criticality == 'ok':
+                    symbol = "[OK]"
+                else:
+                    symbol = "[?]"
+                
+                eol_date = status.get('eol_date', 'N/A')
+                print(f"{symbol:12} {os_name:30} EOL: {eol_date}")
+            
+            return ExitCode.OK
+        
+        else:
+            print("Sous-commande audit requise. Utilisez --help.")
+            return ExitCode.UNKNOWN

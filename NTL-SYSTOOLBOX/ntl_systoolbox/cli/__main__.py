@@ -94,6 +94,10 @@ def parse_arguments():
     
     # backup cleanup
     cleanup_parser = backup_sub.add_parser('cleanup', help='Nettoyer les anciennes sauvegardes')
+
+    # === Module Audit ===
+    audit_parser = subparsers.add_parser('audit', help='Module d\'audit d\'obsolescence')
+    audit_sub = audit_parser.add_subparsers(dest='audit_command')
     
     return parser.parse_args()
 
