@@ -52,7 +52,64 @@ class CommandHandler:
             print(f"Commande inconnue: {command}")
             print("Utilisez --help pour voir les commandes disponibles.")
             return ExitCode.UNKNOWN
-      
+    
+    def _handle_diagnostic(self, args: Namespace) -> int:
+        """Gère les commandes du module diagnostic."""
+        sub_command = args.diag_command
+        
+        if sub_command == 'services':
+            self.output.set_module("Vérification Services AD/DNS")
+            checker = ServiceChecker(config=self.config, output=self.output)
+            
+            if args.dc:
+                checker.check_domain_controller(args.dc)
+            else:
+                checker.check_all_domain_controllers()
+            
+            return self.output.print_summary()
+        
+        elif sub_command in ('database', 'db'):
+            self.output.set_module("Vérification Base de Données")
+            
+            # Override config si spécifié
+            if args.host:
+                self.config._config.setdefault('wms_database', {})['host'] = args.host
+            if args.port:
+                self.config._config.setdefault('wms_database', {})['port'] = args.port
+            
+            checker = DatabaseChecker(config=self.config, output=self.output)
+            checker.check_database()
+            
+            return self.output.print_summary()
+        
+        elif sub_command in ('system', 'sys'):
+            self.output.set_module("Informations Système")
+            collector = SystemInfoCollector(config=self.config, output=self.output)
+            collector.collect_local_info()
+            
+            return self.output.print_summary()
+        
+        elif sub_command == 'all':
+            self.output.set_module("Diagnostic Complet")
+            
+            # Services
+            checker = ServiceChecker(config=self.config, output=self.output)
+            checker.check_all_domain_controllers()
+            
+            # Database
+            db_checker = DatabaseChecker(config=self.config, output=self.output)
+            db_checker.check_database()
+            
+            # System
+            collector = SystemInfoCollector(config=self.config, output=self.output)
+            collector.collect_local_info()
+            
+            return self.output.print_summary()
+        
+        else:
+            print("Sous-commande diagnostic requise. Utilisez --help.")
+            return ExitCode.UNKNOWN
+    
     def _handle_backup(self, args: Namespace) -> int:
         """Gère les commandes du module backup."""
         sub_command = args.backup_command
@@ -108,7 +165,7 @@ class CommandHandler:
         else:
             print("Sous-commande backup requise. Utilisez --help.")
             return ExitCode.UNKNOWN
-        
+    
     def _handle_audit(self, args: Namespace) -> int:
         """Gère les commandes du module audit."""
         sub_command = args.audit_command
